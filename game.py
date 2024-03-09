@@ -1,3 +1,3 @@
-import db_connect,generate_star,ui
+import db_controller,models,ui
 
 ui.start_menu()
