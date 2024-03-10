@@ -10,24 +10,37 @@ class star:
         return key
     def __init__(self):
         rare = ['common','rare','epic','legendary']
-        self.name = 'star'
-        self.__code = self.__generate()
+        self.name = 'None'
+        self.code = self.__generate()
         self.rank = random.choice(rare)
         self.date = None
 
     def check(self,num,index):
-        if num == self.__code[index]:
+        if num == self.code[index]:
             return True
         else:
             return False
 
 class cat:
-    def __init__(self,name):
+    def __init__(self,name,id):
         self.name = name
         self.stars = 0
-        self.hungry = 1
+        self.hungry = 100
+        self.id = id
     def eat(self):
         pass
+
+class lot:
+    def __generate(self):
+        return 0
+    def __init__(self,tg,code):
+        self.id = self.__generate()
+        self.tg = tg
+        self.code = code
+        self.winner = 'False'
+
+
+
 
 
 
