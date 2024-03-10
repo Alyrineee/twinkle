@@ -25,7 +25,7 @@ class cat:
     def __init__(self,name):
         self.name = name
         self.stars = 0
-        self.hungry = 50
+        self.hungry = 1
     def eat(self):
         pass
 

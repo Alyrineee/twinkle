@@ -3,6 +3,9 @@ import models
 starss = []
 cat_obj = models.cat('Alyrine')
 def start_menu():
+    if cat_obj.hungry <= 0:
+        print('Oh,no cat...')
+        return 0
     print('Welcome to Twinkle\nSelect mode:\n1 - Earn Stars\n2 - Star Cat\n3 - Create cat')
     mode = int(input())
     if mode == 1:
@@ -27,27 +30,37 @@ def earn():
         else:
             wrong+=1
     print('----------------------------------------------')
-    if correct//wrong >= 0.5:
-        print('You get 1 star!')
-        cat_obj.stars+=1
-        starss.append(star)
-    else:
-        print('Oh no, your cat wants to eat!')
-        cat.hungry = cat_obj.hungry-(cat_obj.stars*(correct+1)//7)
-        print(f'Hungry: {cat.hungry}')
+    try:
+        if correct//wrong >= 0.5:
+            print('You get 1 star!')
+            cat_obj.stars+=1
+            starss.append(star)
+        else:
+            print('Oh no, your cat wants to eat!')
+            cat_obj.hungry = cat_obj.hungry-(cat_obj.stars*(correct)//7)
+            print(f'Hungry: {cat_obj.hungry}')
+    except:
+            print('Oh no, your cat wants to eat!')
+            cat_obj.hungry = cat_obj.hungry-(cat_obj.stars*(correct+1)//7)
+            print(f'Hungry: {cat_obj.hungry}')
+
     print('----------------------------------------------')
     print(f'Star info:\nName: {star.name}\nRank: {star.rank}')
     print('----------------------------------------------')
-    temp = input('\n\npress any key....')
-    clear()
-    start_menu()
+    if cat_obj.hungry <= 0:
+        print('Oh,no cat...')
+    else:
+        temp = input('\n\npress any key....')
+        clear()
+        start_menu()
 def cat():
     clear()
     print(f'Cat`s name: {cat_obj.name}')
-    print(f'Hungry: {cat_obj.stars}')
+    print(f'Stars: {cat_obj.stars}')
     print(f'Hungry: {cat_obj.hungry}')
-    temp = int(input('\n\npress any key....'))
-    if temp == 1:
+    print('\n\n1 - Feed\n2 - Go home')
+    temp = input('Select mode:')
+    if temp == '1':
         star = starss.pop()
         if star.rank == 'common':
             cat_obj.hungry += (100 - cat_obj.hungry) * 0.1
