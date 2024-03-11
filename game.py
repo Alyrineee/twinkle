@@ -40,6 +40,7 @@ async def cmd_start(message: types.Message):
     else:
         await bot.send_message(message.chat.id,"Добро пожаловать в Twinkle\nЧем займемся сейчас?", reply_markup=gui.lobby())
 
+
 @dp.callback_query(F.data == "create_cat")
 async def class_change(call: types.CallbackQuery):
     global create
@@ -58,11 +59,40 @@ async def echo_message(message: types.Message):
         cursor.execute('INSERT INTO Cats (Name,Hungry,Stars,Id) VALUES (?,?,?,?)', (temp_cat.name,float(temp_cat.hungry),temp_cat.stars,temp_cat.id))
         conn.commit()
     if code:
+        star = models.star()
+        while True:
+            star = models.star()
+            try:
+                cursor.execute('INSERT INTO Stars (Code,Name,Rank,Date) VALUES (?,?,?,?)',
+                               (star.code, star.name, star.rank, star.date))
+                conn.commit()
+                break
+            except:
+                temp_star = cursor.execute('SELECT code FROM Stars WHERE Code = ? AND Name = ?', (star.code, star.name))
+                if tuple(*temp_star) != ():
+                    break
         temp_lot = models.lot(message.chat.id,message.text)
         code = False
         cursor.execute('INSERT INTO Games (ID,Gamer_ID,Code,Winner) VALUES (?,?,?,?)',
                        (temp_lot.id, temp_lot.tg, temp_lot.code, temp_lot.winner))
         conn.commit()
+        cursor.execute('SELECT Code FROM Games WHERE ID = 0')
+        temp_code = cursor.fetchone()
+        wrong = 0
+        corect = 0
+        for i in range(8):
+            if temp_code[0][i] == star.code[i]:
+                corect+=1
+            else:
+                wrong+=1
+        if corect/wrong >= 0.5:
+            cursor.execute(f'UPDATE Stars SET Name="Alyrine" WHERE Code = {star.code}')
+            conn.commit()
+        else:
+            cursor.execute(f'UPDATE Cats SET Hungry={100-(3*wrong)//7} WHERE Name = "Alyrine"')
+            conn.commit()
+
+
 
 
 @dp.callback_query(F.data == "go_lobby")
@@ -75,11 +105,10 @@ async def class_change(call: types.CallbackQuery):
 @dp.callback_query(F.data == "earn_stars")
 async def class_change(call: types.CallbackQuery):
     await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
-    star = models.star()
-    await call.message.answer(f"Каждую минуту вам будет приходить сообщение о розыгрыше звезды.\nЧем больше вы угадаете цифр тем больше шанс получить звезду\n\nDATA:{star.name}:{star.code}:{star.rank}:{star.date}\n\nВведите код:")
+
+    await call.message.answer(f"Введите код:")
     global code
     code = True
-
 
 
 if __name__ == "__main__":

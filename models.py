@@ -15,11 +15,8 @@ class star:
         self.rank = random.choice(rare)
         self.date = None
 
-    def check(self,num,index):
-        if num == self.code[index]:
-            return True
-        else:
-            return False
+    def check(self,num):
+        pass
 
 class cat:
     def __init__(self,name,id):
