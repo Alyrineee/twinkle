@@ -47,6 +47,12 @@ async def class_change(call: types.CallbackQuery):
     await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
     await call.message.answer("Введи имя кота:")
     create = True
+@dp.callback_query(F.data == "ctrl_cat")
+async def feed(call: types.CallbackQuery):
+    await bot.send_message(call.message.chat.id,
+                           "Тут ты можешь покормить своего кота\n\nКот будет есть звезды которые ты съел последними",
+                           reply_markup=gui.ctrl_cat())
+
 
 @dp.message()
 async def echo_message(message: types.Message):
@@ -59,7 +65,6 @@ async def echo_message(message: types.Message):
         cursor.execute('INSERT INTO Cats (Name,Hungry,Stars,Id) VALUES (?,?,?,?)', (temp_cat.name,float(temp_cat.hungry),temp_cat.stars,temp_cat.id))
         conn.commit()
     if code:
-        star = models.star()
         while True:
             star = models.star()
             try:
@@ -77,36 +82,76 @@ async def echo_message(message: types.Message):
                        (temp_lot.id, temp_lot.tg, temp_lot.code, temp_lot.winner))
         conn.commit()
         cursor.execute('SELECT Code FROM Games WHERE ID = 0')
-        temp_code = cursor.fetchone()
+        temp_code = cursor.fetchall()[-1][0]
         wrong = 0
         corect = 0
+        print(temp_lot.tg)
         for i in range(8):
-            if temp_code[0][i] == star.code[i]:
+            if temp_code[i] == star.code[i]:
                 corect+=1
+                print(temp_code[i],star.code[i])
             else:
                 wrong+=1
-        if corect/wrong >= 0.5:
-            cursor.execute(f'UPDATE Stars SET Name="Alyrine" WHERE Code = {star.code}')
+                print(temp_code[i], star.code[i])
+        cursor.execute(f'SELECT Stars FROM Cats WHERE id={temp_lot.tg}')
+        stars = cursor.fetchall()[0][0]
+        print(stars)
+        if corect/8 >= 0.5:
+            cursor.execute(f'UPDATE Stars SET Name={temp_lot.tg} WHERE Code = "{star.code}"')
+            cursor.execute(f'UPDATE Cats SET Stars={stars + 1} WHERE id = {temp_lot.tg}')
             conn.commit()
+            await bot.send_message(message.chat.id, "Вы получаете 1 звезду!", reply_markup=gui.after_create())
         else:
-            cursor.execute(f'UPDATE Cats SET Hungry={100-(3*wrong)//7} WHERE Name = "Alyrine"')
+            cursor.execute(f'SELECT Hungry From Cats WHERE id={temp_lot.tg}')
+            cat_hungry = cursor.fetchone()[0]
+            cursor.execute(f'UPDATE Cats SET Hungry={cat_hungry-(stars*corect)//7} WHERE id = {temp_lot.tg}')
             conn.commit()
+            cursor.execute(f'SELECT Hungry From Cats WHERE id={temp_lot.tg}')
+            cat_hungry = cursor.fetchone()[0]
+            if cat_hungry<=0:
+                await bot.send_message(message.chat.id, "кот умер....")
+                cursor.execute(
+                    f'UPDATE Stars SET Name="None" WHERE Name = {temp_lot.tg}')
+                conn.commit()
+            else:
+                await bot.send_message(message.chat.id, "К сожалению вы не получаете звезду(", reply_markup=gui.back())
 
-
-
+@dp.callback_query(F.data == "top")
+async def feed(call: types.CallbackQuery):
+    await call.message.answer("В разработке...",reply_markup=gui.back())
 
 @dp.callback_query(F.data == "go_lobby")
 async def class_change(call: types.CallbackQuery):
     await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
     await call.message.answer("Добро пожаловать в Twinkle\nЧем займемся сейчас?",reply_markup=gui.lobby())
-
+@dp.callback_query(F.data == "feed_cat")
+async def feed(call: types.CallbackQuery):
+    await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
+    cursor.execute(f'SELECT Code From Stars WHERE Name = {call.from_user.id} AND Eat=0')
+    star_code = cursor.fetchall()[-1][0]
+    cursor.execute(f'SELECT Rank From Stars WHERE Name = {call.from_user.id} AND Eat=0')
+    star_rare = cursor.fetchall()[-1][0]
+    cursor.execute(f'UPDATE Stars SET Eat=1 WHERE Code={star_code}')
+    conn.commit()
+    cursor.execute(f'SELECT Hungry From Cats WHERE id={call.from_user.id}')
+    cat_hungry = cursor.fetchone()[0]
+    print(cat_hungry)
+    if star_rare == 'common':
+        cursor.execute(f'UPDATE Cats SET Hungry={cat_hungry+(100 - cat_hungry) * 0.1} WHERE id = {call.from_user.id}')
+    elif star_rare == 'rare':
+        cursor.execute(f'UPDATE Cats SET Hungry={cat_hungry+(100 - cat_hungry) * 0.2} WHERE id = {call.from_user.id}')
+    elif star_rare == 'epic':
+        cursor.execute(f'UPDATE Cats SET Hungry={cat_hungry+(100 - cat_hungry) * 0.5} WHERE id = {call.from_user.id}')
+    elif star_rare == 'legendary':
+        cursor.execute(f'UPDATE Cats SET Hungry={cat_hungry+(100 - cat_hungry) * 0.9} WHERE id = {call.from_user.id}')
+    conn.commit()
+    await call.message.answer("Кот поел",reply_markup=gui.lobby())
 
 
 @dp.callback_query(F.data == "earn_stars")
 async def class_change(call: types.CallbackQuery):
     await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
-
-    await call.message.answer(f"Введите код:")
+    await call.message.answer(f"Упала звезда!!!\n\nЧтобы получить звезду тебе необходимо угадать как можно больше цифр в числе\n\nЭто число состоит из 8 цифр от 0 до 1\n\nФормат ответа:00000000")
     global code
     code = True
 

@@ -15,8 +15,7 @@ class star:
         self.rank = random.choice(rare)
         self.date = None
 
-    def check(self,num):
-        pass
+
 
 class cat:
     def __init__(self,name,id):
